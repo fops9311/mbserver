@@ -9,6 +9,8 @@ import (
 	"github.com/goburrow/serial"
 )
 
+const VERSION = "0.0.1"
+
 // Server is a Modbus slave with allocated memory for discrete inputs, coils, etc.
 type Server struct {
 	// Debug enables more verbose messaging.

@@ -1,7 +1,6 @@
 package mbserver
 
 import (
-	"bufio"
 	"io"
 	"log"
 
@@ -35,14 +34,30 @@ SkipFrameError:
 		default:
 		}
 
-		buffer, _, err := bufio.NewReader(port).ReadLine()
-		bytesRead := len(buffer)
+		getMessageBuffer := func(port serial.Port) ([]byte, error) {
+			var result []byte = make([]byte, 0)
+			for len(result) < 4 {
+				readbuffer := make([]byte, 512)
+				bytesRead, err := port.Read(readbuffer)
+				if err != nil {
+					return result, err
+				}
+				result = readbuffer[:bytesRead]
+				for _, v := range readbuffer[:bytesRead] {
+					result = append(result, v)
+				}
+			}
+			return result, nil
+		}
+
+		buffer, err := getMessageBuffer(port)
 		if err != nil {
 			if err != io.EOF {
 				log.Printf("serial read error %v\n", err)
 			}
 			return
 		}
+		bytesRead := len(buffer)
 
 		if bytesRead != 0 {
 
