@@ -89,10 +89,12 @@ func (s *Server) handle(request *Request) Framer {
 
 // All requests are handled synchronously to prevent modbus memory corruption.
 func (s *Server) handler() {
+	var i byte = 0
 	for {
 		request := <-s.requestChan
 		response := s.handle(request)
-		request.conn.Write(response.Bytes())
+		request.conn.Write(append(response.Bytes(), i))
+		i++
 	}
 }
 

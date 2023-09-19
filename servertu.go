@@ -78,6 +78,8 @@ SkipFrameError:
 			request := &Request{port, frame}
 
 			s.requestChan <- request
+			//time dependancy
+			<-time.NewTimer(time.Millisecond * 20).C
 		}
 	}
 }
