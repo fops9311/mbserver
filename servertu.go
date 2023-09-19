@@ -3,6 +3,7 @@ package mbserver
 import (
 	"io"
 	"log"
+	"time"
 
 	"github.com/goburrow/serial"
 )
@@ -42,7 +43,7 @@ SkipFrameError:
 				if err != nil {
 					return result, err
 				}
-				result = readbuffer[:bytesRead]
+				<-time.NewTimer(time.Millisecond * 20).C
 				for _, v := range readbuffer[:bytesRead] {
 					result = append(result, v)
 				}
