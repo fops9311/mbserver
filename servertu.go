@@ -75,11 +75,14 @@ SkipFrameError:
 				//return
 			}
 
-			request := &Request{port, frame}
+			resp := make(chan Framer)
+			request := &Request{port, frame, resp}
 
 			s.requestChan <- request
 			//time dependancy
-			<-time.NewTimer(time.Millisecond * 20).C
+			//<-time.NewTimer(time.Millisecond * 20).C
+			response := <-resp
+			request.conn.Write(append(response.Bytes()))
 		}
 	}
 }

@@ -38,10 +38,13 @@ func (s *Server) accept(listen net.Listener) error {
 					log.Printf("bad packet error %v\n", err)
 					return
 				}
-
-				request := &Request{conn, frame}
+				resp := make(chan Framer)
+				request := &Request{conn, frame, resp}
 
 				s.requestChan <- request
+
+				response := <-resp
+				request.conn.Write(append(response.Bytes()))
 			}
 		}(conn)
 	}

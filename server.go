@@ -3,6 +3,7 @@ package mbserver
 
 import (
 	"io"
+	"log"
 	"net"
 	"sync"
 
@@ -29,8 +30,9 @@ type Server struct {
 
 // Request contains the connection and Modbus frame.
 type Request struct {
-	conn  io.ReadWriteCloser
-	frame Framer
+	conn     io.ReadWriteCloser
+	frame    Framer
+	responce chan Framer
 }
 
 // NewServer creates a new Modbus server (slave).
@@ -92,8 +94,12 @@ func (s *Server) handler() {
 	var i byte = 0
 	for {
 		request := <-s.requestChan
+
+		log.Printf("handle #%d; got request: %v\n", i, request.frame.Bytes())
 		response := s.handle(request)
-		request.conn.Write(append(response.Bytes(), i))
+		log.Printf("handle #%d; finish\n", i)
+		request.conn.Write(append(response.Bytes()))
+		log.Printf("handle #%d; response data: %v\n", i, response.Bytes())
 		i++
 	}
 }
