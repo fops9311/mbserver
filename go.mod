@@ -1,4 +1,4 @@
-module fops9311/mbserver
+module github.com/fops9311/mbserver
 
 go 1.21.0
 
