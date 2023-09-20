@@ -98,8 +98,7 @@ func (s *Server) handler() {
 		log.Printf("handle #%d; got request: %v\n", i, request.frame.Bytes())
 		response := s.handle(request)
 		log.Printf("handle #%d; finish\n", i)
-		request.conn.Write(append(response.Bytes()))
-		log.Printf("handle #%d; response data: %v\n", i, response.Bytes())
+		request.responce <- response
 		i++
 	}
 }

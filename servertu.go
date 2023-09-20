@@ -44,9 +44,7 @@ SkipFrameError:
 					return result, err
 				}
 				<-time.NewTimer(time.Millisecond * 20).C
-				for _, v := range readbuffer[:bytesRead] {
-					result = append(result, v)
-				}
+				result = append(result, readbuffer[:bytesRead]...)
 			}
 			return result, nil
 		}
@@ -82,7 +80,8 @@ SkipFrameError:
 			//time dependancy
 			//<-time.NewTimer(time.Millisecond * 20).C
 			response := <-resp
-			request.conn.Write(append(response.Bytes()))
+			request.conn.Write((response.Bytes()))
+			log.Printf("response data: %v\n", response.Bytes())
 		}
 	}
 }

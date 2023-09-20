@@ -44,7 +44,8 @@ func (s *Server) accept(listen net.Listener) error {
 				s.requestChan <- request
 
 				response := <-resp
-				request.conn.Write(append(response.Bytes()))
+				request.conn.Write((response.Bytes()))
+				log.Printf("response data: %v\n", response.Bytes())
 			}
 		}(conn)
 	}
