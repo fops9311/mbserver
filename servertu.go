@@ -81,7 +81,10 @@ SkipFrameError:
 			//<-time.NewTimer(time.Millisecond * 20).C
 			response := <-resp
 			request.conn.Write((response.Bytes()))
-			log.Printf("response data: %v\n", response.Bytes())
+
+			if s.Debug {
+				log.Printf("response data: %v\n", response.Bytes())
+			}
 		}
 	}
 }

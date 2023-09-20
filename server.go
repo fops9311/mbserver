@@ -95,9 +95,13 @@ func (s *Server) handler() {
 	for {
 		request := <-s.requestChan
 
-		log.Printf("handle #%d; got request: %v\n", i, request.frame.Bytes())
+		if s.Debug {
+			log.Printf("handle #%d; got request: %v\n", i, request.frame.Bytes())
+		}
 		response := s.handle(request)
-		log.Printf("handle #%d; finish\n", i)
+		if s.Debug {
+			log.Printf("handle #%d; finish\n", i)
+		}
 		request.responce <- response
 		i++
 	}
