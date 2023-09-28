@@ -39,6 +39,9 @@ SkipFrameError:
 			var result []byte = make([]byte, 0)
 			for len(result) < 4 {
 				readbuffer := make([]byte, 512)
+				if s.Debug {
+					log.Printf("start com reading\n")
+				}
 				bytesRead, err := port.Read(readbuffer)
 				if err != nil {
 					return result, err
