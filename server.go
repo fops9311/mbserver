@@ -109,10 +109,10 @@ func (s *Server) handler() {
 			log.Printf("handle #%d; send responce\n", i)
 		}
 		request.responce <- response
-		i++
 		if s.Debug {
 			log.Printf("handle #%d; end----\n", i)
 		}
+		i++
 	}
 }
 

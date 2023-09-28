@@ -57,7 +57,7 @@ SkipFrameError:
 			if err != io.EOF {
 				log.Printf("serial read error %v\n", err)
 			}
-			return
+			continue SkipFrameError
 		}
 		bytesRead := len(buffer)
 
