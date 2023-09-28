@@ -93,6 +93,9 @@ func (s *Server) handle(request *Request) Framer {
 func (s *Server) handler() {
 	var i byte = 0
 	for {
+		if s.Debug {
+			log.Printf("handle #%d; start----\n", i)
+		}
 		request := <-s.requestChan
 
 		if s.Debug {
@@ -102,8 +105,14 @@ func (s *Server) handler() {
 		if s.Debug {
 			log.Printf("handle #%d; finish\n", i)
 		}
+		if s.Debug {
+			log.Printf("handle #%d; send responce\n", i)
+		}
 		request.responce <- response
 		i++
+		if s.Debug {
+			log.Printf("handle #%d; end----\n", i)
+		}
 	}
 }
 
