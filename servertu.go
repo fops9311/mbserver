@@ -1,7 +1,7 @@
 package mbserver
 
 import (
-	"io"
+	"fmt"
 	"log"
 	"time"
 
@@ -22,11 +22,11 @@ func (s *Server) ListenRTU(serialConfig *serial.Config) (err error) {
 		defer s.portsWG.Done()
 		s.acceptSerialRequests(port)
 	}()
-
 	return err
 }
 
 func (s *Server) acceptSerialRequests(port serial.Port) {
+	cominput := scanCom(port, s.Debug)
 SkipFrameError:
 	for {
 		select {
@@ -35,30 +35,8 @@ SkipFrameError:
 		default:
 		}
 
-		getMessageBuffer := func(port serial.Port) ([]byte, error) {
-			var result []byte = make([]byte, 0)
-			for len(result) < 4 {
-				readbuffer := make([]byte, 512)
-				if s.Debug {
-					log.Printf("start com reading\n")
-				}
-				bytesRead, err := port.Read(readbuffer)
-				if err != nil {
-					return result, err
-				}
-				<-time.NewTimer(time.Millisecond * 20).C
-				result = append(result, readbuffer[:bytesRead]...)
-			}
-			return result, nil
-		}
+		buffer := <-cominput
 
-		buffer, err := getMessageBuffer(port)
-		if err != nil {
-			if err != io.EOF {
-				log.Printf("serial read error %v\n", err)
-			}
-			continue SkipFrameError
-		}
 		bytesRead := len(buffer)
 
 		if bytesRead != 0 {
@@ -90,4 +68,57 @@ SkipFrameError:
 			}
 		}
 	}
+}
+
+var s = time.Now()
+
+func scanCom(port serial.Port, debug bool) chan []byte {
+	var c chan []byte = make(chan []byte, 20)
+	byteChan := make(chan []byte, 20)
+	go func() {
+		for {
+			readbuffer := make([]byte, 1)
+			_, err := port.Read(readbuffer)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+			byteChan <- readbuffer
+		}
+	}()
+	go func() {
+		var result []byte = make([]byte, 0)
+		i := 0
+		for {
+			select {
+			case readbuffer := <-byteChan:
+				if i == 0 {
+					if debug {
+						fmt.Println()
+					}
+				}
+				f := time.Now()
+				r := f.Sub(s)
+
+				s = f
+				result = append(result, readbuffer...)
+				if debug {
+					log.Print(i, ":", readbuffer, r, "")
+				}
+				i++
+				continue
+			case <-time.NewTimer(time.Millisecond * 20).C:
+
+				if debug {
+					fmt.Printf(".")
+				}
+				if len(result) > 0 {
+					c <- result
+				}
+				result = make([]byte, 0)
+				i = 0
+			}
+		}
+	}()
+	return c
 }
