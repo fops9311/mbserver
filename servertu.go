@@ -3,6 +3,7 @@ package mbserver
 import (
 	"fmt"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/goburrow/serial"
@@ -24,6 +25,8 @@ func (s *Server) ListenRTU(serialConfig *serial.Config) (err error) {
 	}()
 	return err
 }
+
+var wg sync.WaitGroup
 
 func (s *Server) acceptSerialRequests(port serial.Port) {
 	cominput := scanCom(port, s.Debug)
@@ -59,7 +62,7 @@ func (s *Server) acceptSerialRequests(port serial.Port) {
 				s.requestChan <- request
 				response := <-resp
 				request.conn.Write((response.Bytes()))
-
+				wg.Done()
 				if s.Debug {
 					log.Printf("response data: %v\n", response.Bytes())
 				}
@@ -112,6 +115,8 @@ func scanCom(port serial.Port, debug bool) chan []byte {
 				}
 				if len(result) > 0 {
 					c <- result
+					wg.Add(1)
+					wg.Wait()
 				}
 				result = make([]byte, 0)
 				i = 0
