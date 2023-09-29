@@ -58,8 +58,6 @@ SkipFrameError:
 			request := &Request{port, frame, resp}
 
 			s.requestChan <- request
-			//time dependancy
-			<-time.NewTimer(time.Millisecond * 20).C
 			response := <-resp
 			request.conn.Write((response.Bytes()))
 
