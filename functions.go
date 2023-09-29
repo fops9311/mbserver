@@ -115,10 +115,15 @@ func WriteMultipleCoils(s *Server, frame Framer) ([]byte, *Exception) {
 
 // WriteHoldingRegisters function 16, writes holding registers to internal memory.
 func WriteHoldingRegisters(s *Server, frame Framer) ([]byte, *Exception) {
-	register, numRegs, _ := registerAddressAndNumber(frame)
-	valueBytes := frame.GetData()[5:]
 	var exception *Exception
 	var data []byte
+
+	register, numRegs, _ := registerAddressAndNumber(frame)
+	if len(frame.GetData()) < 5 {
+		exception = &GatewayTargetDeviceFailedtoRespond
+		return data, exception
+	}
+	valueBytes := frame.GetData()[5:]
 
 	if len(valueBytes)/2 != numRegs {
 		exception = &IllegalDataAddress

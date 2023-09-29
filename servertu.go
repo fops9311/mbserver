@@ -6,15 +6,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/goburrow/serial"
+	"github.com/tarm/serial"
 )
 
 // ListenRTU starts the Modbus server listening to a serial device.
 // For example:  err := s.ListenRTU(&serial.Config{Address: "/dev/ttyUSB0"})
 func (s *Server) ListenRTU(serialConfig *serial.Config) (err error) {
-	port, err := serial.Open(serialConfig)
+	port, err := serial.OpenPort(serialConfig)
 	if err != nil {
-		log.Fatalf("failed to open %s: %v\n", serialConfig.Address, err)
+		log.Fatalf("failed to open %s: %v\n", serialConfig.Name, err)
 	}
 	s.ports = append(s.ports, port)
 
@@ -28,7 +28,7 @@ func (s *Server) ListenRTU(serialConfig *serial.Config) (err error) {
 
 var wg sync.WaitGroup
 
-func (s *Server) acceptSerialRequests(port serial.Port) {
+func (s *Server) acceptSerialRequests(port *serial.Port) {
 	cominput := scanCom(port, s.Debug)
 	for {
 		select {
@@ -52,6 +52,7 @@ func (s *Server) acceptSerialRequests(port serial.Port) {
 					//The next line prevents RTU server from exiting when it receives a bad frame. Simply discard the erroneous
 					//frame and wait for next frame by jumping back to the beginning of the 'for' loop.
 					log.Printf("Keep the RTU server running!!\n")
+					wg.Done()
 					continue
 					//return
 				}
@@ -61,10 +62,12 @@ func (s *Server) acceptSerialRequests(port serial.Port) {
 
 				s.requestChan <- request
 				response := <-resp
-				request.conn.Write((response.Bytes()))
+
+				_, err = request.conn.Write((response.Bytes()))
 				wg.Done()
+
 				if s.Debug {
-					log.Printf("response data: %v\n", response.Bytes())
+					log.Printf("response data: %v,error: %v\n", response.Bytes(), err)
 				}
 			}
 		}
@@ -73,7 +76,7 @@ func (s *Server) acceptSerialRequests(port serial.Port) {
 
 var s = time.Now()
 
-func scanCom(port serial.Port, debug bool) chan []byte {
+func scanCom(port *serial.Port, debug bool) chan []byte {
 	var c chan []byte = make(chan []byte, 20)
 	byteChan := make(chan []byte, 20)
 	go func() {
@@ -108,15 +111,20 @@ func scanCom(port serial.Port, debug bool) chan []byte {
 				}
 				i++
 				continue
-			case <-time.NewTimer(time.Millisecond * 20).C:
+			case <-time.NewTimer(time.Millisecond * 5).C:
 
 				if debug {
 					fmt.Printf(".")
 				}
-				if len(result) > 0 {
+				if len(result) > 0 && result[0] == 1 {
 					c <- result
 					wg.Add(1)
 					wg.Wait()
+				} else {
+					if debug && len(result) > 0 {
+						fmt.Println()
+						log.Println("BAD REQUEST", result)
+					}
 				}
 				result = make([]byte, 0)
 				i = 0

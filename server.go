@@ -7,7 +7,7 @@ import (
 	"net"
 	"sync"
 
-	"github.com/goburrow/serial"
+	"github.com/tarm/serial"
 )
 
 const VERSION = "0.0.11"
@@ -17,7 +17,7 @@ type Server struct {
 	// Debug enables more verbose messaging.
 	Debug            bool
 	listeners        []net.Listener
-	ports            []serial.Port
+	ports            []*serial.Port
 	portsWG          sync.WaitGroup
 	portsCloseChan   chan struct{}
 	requestChan      chan *Request
