@@ -27,42 +27,42 @@ func (s *Server) ListenRTU(serialConfig *serial.Config) (err error) {
 
 func (s *Server) acceptSerialRequests(port serial.Port) {
 	cominput := scanCom(port, s.Debug)
-SkipFrameError:
 	for {
 		select {
 		case <-s.portsCloseChan:
 			return
-		default:
-		}
-
-		buffer := <-cominput
-
-		bytesRead := len(buffer)
-
-		if bytesRead != 0 {
-
-			// Set the length of the packet to the number of read bytes.
-			packet := buffer[:bytesRead]
-
-			frame, err := NewRTUFrame(packet)
-			if err != nil {
-				log.Printf("bad serial frame error %v\n", err)
-				//The next line prevents RTU server from exiting when it receives a bad frame. Simply discard the erroneous
-				//frame and wait for next frame by jumping back to the beginning of the 'for' loop.
-				log.Printf("Keep the RTU server running!!\n")
-				continue SkipFrameError
-				//return
-			}
-
-			resp := make(chan Framer)
-			request := &Request{port, frame, resp}
-
-			s.requestChan <- request
-			response := <-resp
-			request.conn.Write((response.Bytes()))
+		case buffer := <-cominput:
 
 			if s.Debug {
-				log.Printf("response data: %v\n", response.Bytes())
+				log.Printf("acceptSerialRequests got input...\n")
+			}
+			bytesRead := len(buffer)
+
+			if bytesRead != 0 {
+
+				// Set the length of the packet to the number of read bytes.
+				packet := buffer[:bytesRead]
+
+				frame, err := NewRTUFrame(packet)
+				if err != nil {
+					log.Printf("bad serial frame error %v\n", err)
+					//The next line prevents RTU server from exiting when it receives a bad frame. Simply discard the erroneous
+					//frame and wait for next frame by jumping back to the beginning of the 'for' loop.
+					log.Printf("Keep the RTU server running!!\n")
+					continue
+					//return
+				}
+
+				resp := make(chan Framer)
+				request := &Request{port, frame, resp}
+
+				s.requestChan <- request
+				response := <-resp
+				request.conn.Write((response.Bytes()))
+
+				if s.Debug {
+					log.Printf("response data: %v\n", response.Bytes())
+				}
 			}
 		}
 	}
